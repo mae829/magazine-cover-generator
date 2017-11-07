@@ -1,5 +1,5 @@
 $(function() {
-    var $form       = $('form[name="wr-cover"]'),
+    var $form       = $('form[name="mcg-cover"]'),
         $fileInput  = $form.find('input[type="file"]'),
         $fileSubmit = $form.find('input[type="submit"]');
 
@@ -26,8 +26,7 @@ if ( $('#canvas').length ) {
 
         // make the canvas a responsive width
         var windowWidth     = $(window).width(),
-            mainWidth       = $('#container .main').width(), // width of our left hand main container
-            sidebarWidth    = $('#sidebar').width();
+            mainWidth       = $('#img-edit').width();
 
         var responsiveScale = 1;
 
@@ -84,8 +83,6 @@ if ( $('#canvas').length ) {
             }
 
             img.set({
-                lockScalingFlip: true,
-                lockUniScaling: true,
                 lockScalingFlip: userImage.lockScalingFlip,
                 lockUniScaling: userImage.lockUniScaling,
                 angle: userImage.angle,
@@ -109,7 +106,7 @@ if ( $('#canvas').length ) {
         document.getElementById('btn-download').addEventListener( 'click', function() {
             canvas.deactivateAll().renderAll();
             this.href       = document.getElementById('canvas').toDataURL();
-            this.download   = 'wr-cover-custom.jpg';
+            this.download   = 'mcg-custom.jpg';
         }, false );
 
         $('.color-field').wpColorPicker({
@@ -290,3 +287,4 @@ if ( $('#canvas').length ) {
     })(typeof exports !== 'undefined' ? exports : this);
 
 }
+
