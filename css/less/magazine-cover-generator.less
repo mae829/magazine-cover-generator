@@ -55,7 +55,7 @@ strong {
 				z-index: 9999;
 
 				&:checked + label {
-					border: 2px solid #e50077;
+					border: 2px solid #000;
 				}
 			}
 
@@ -73,20 +73,24 @@ strong {
 
 }
 
-.iris-picker {
-	height: 35px !important;
-	padding-bottom: 0 !important;
-	width: 200px !important;
+.iris {
+	&-picker {
+		height: 35px !important;
+		padding-bottom: 0 !important;
+		width: 200px !important;
+	}
 
-	.iris-palette {
+	&-palette {
 		max-height: 20px !important;
 		max-width: 20px !important;
 	}
-	.iris-square,
-	.iris-slider {
+
+	&-square,
+	&-slider {
 		display: none !important;
 	}
 }
+
 .wp-picker-input-wrap {
 	display: none !important;
 }
