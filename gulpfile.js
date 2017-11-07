@@ -47,7 +47,7 @@ gulp.task( 'js', function() {
 gulp.task( 'browser-sync', function() {
 
     browserSync.init( {
-        proxy: 'bleucellar.loc/', // Your local environment site from XAMPP, VVV, or the like
+        proxy: 'XXXXXXX.loc/', // Your local environment site from XAMPP, VVV, or the like
         watchOptions: {
             debounceDelay: 2000 // Delay for events called in succession for the same file/event
         },
