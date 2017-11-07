@@ -1,9 +1,8 @@
 <?php
 
-if ( ! defined( 'WP_DFP_ADS_DIR' ) ) {
-	exit;
-}
-
+/**
+ * Magazine Cover Generator Admin area set up
+ */
 class Magazine_Cover_Generator_Admin {
 
 	static $instance	= false;
@@ -13,6 +12,20 @@ class Magazine_Cover_Generator_Admin {
 	public function __construct() {
 
 		$this->_add_actions();
+
+	}
+
+	/**
+	 * Add Actions
+	 *
+	 * Defines all the WordPress actions and filters used by this class.
+	 */
+	protected function _add_actions() {
+
+		add_action( 'admin_init', array( $this, 'init' ) );
+		add_action( 'admin_menu', array( $this, 'menu' ) );
+		add_action( 'cmb2_admin_init', array( $this, 'add_options_page_metabox' ) );
+
 	}
 
 	/**
@@ -37,13 +50,12 @@ class Magazine_Cover_Generator_Admin {
 
 	/**
 	 * Register the administration page.
-	 *
 	 */
 	public function menu() {
 
 		global $cover_generator_options_page;
 
-		$cover_generator_options_page	= add_management_page( 'MagCover Generator', 'MagCover Generator', 'manage_options', 'magazine-cover-generator', array( $this, 'admin_page' ) );
+		$cover_generator_options_page	= add_management_page( 'Mag Cover Generator', 'Mag Cover Generator', 'manage_options', 'magazine-cover-generator', array( $this, 'admin_page' ) );
 
 		// Include CMB CSS in the head to avoid FOUC
 		add_action( "admin_print_styles-{$cover_generator_options_page}", array( 'CMB2_hookup', 'enqueue_cmb_css' ) );
@@ -132,19 +144,6 @@ class Magazine_Cover_Generator_Admin {
 		}
 
 		throw new Exception( 'Invalid property: ' . $field );
-
-	}
-
-	/**
-	 * Add Actions
-	 *
-	 * Defines all the WordPress actions and filters used by this class.
-	 */
-	protected function _add_actions() {
-
-		add_action( 'admin_init', array( $this, 'init' ) );
-		add_action( 'admin_menu', array( $this, 'menu' ) );
-		add_action( 'cmb2_admin_init', array( $this, 'add_options_page_metabox' ) );
 
 	}
 
