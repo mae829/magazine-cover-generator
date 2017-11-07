@@ -51,7 +51,7 @@ gulp.task( 'browser-sync', function() {
         watchOptions: {
             debounceDelay: 2000 // Delay for events called in succession for the same file/event
         },
-        // tunnel: 'wpbingo', // For use if not on same wifi
+        // tunnel: 'mcgen', // For use if not on same wifi
         online: false, // For when testing locally only
         open: false,
         // browser: ['firefox']
