@@ -1,0 +1,383 @@
+<?php
+/**
+ * Plugin Name: Magazine Cover Generator
+ * Description: Plugin to generate magazine covers with user uploaded images
+ * Version: 1.0
+ * Author: Mike Estrada
+ */
+
+if ( !defined('ABSPATH') )
+	die ( 'YOU SHALL NOT PASS!' );
+
+define( 'MCG_DIR', plugin_dir_path(__FILE__) );
+define( 'MCG_URL', plugin_dir_url(__FILE__) );
+define( 'MCG_BASE', plugin_basename( __FILE__ ) );
+define( 'MCG_VERSION', '1.0' );
+// define( 'MCG_MAX_UPLOAD_SIZE', 1048576 ); // 1MB in bytes
+// define( 'MCG_MAX_UPLOAD_SIZE', 2097152 ); // 2MB in bytes
+define( 'MCG_MAX_UPLOAD_SIZE', 3145728 ); // 3MB in bytes
+define( 'MCG_TYPE_WHITELIST', serialize( array(
+	'image/jpeg',
+	'image/png'
+) ) );
+
+function mcg_cover_parse_file_errors( $file = '' ) {
+
+	$result				= array();
+	$result['error']	= false;
+
+	if ( $file['error'] ) {
+
+		$result['error']	= 'No file uploaded or there was an error during the upload.';
+
+		return $result;
+
+	}
+
+	$image_data	= getimagesize( $file['tmp_name'] );
+
+	$maximum	= array(
+		'width'		=> '4048',
+		'height'	=> '3036'
+	);
+	$image_width	= $image_data[0];
+	$image_height	= $image_data[1];
+
+	if ( !in_array( $image_data['mime'], unserialize( COVER_GEN_TYPE_WHITELIST ) ) ) {
+
+		$result['error'] = 'Your image must be a jpeg or png.';
+
+	} elseif ( $file['size'] > COVER_GEN_MAX_UPLOAD_SIZE ) {
+
+		$file_size	= size_format( $file['size'], 2 );
+		$max_size	= size_format( COVER_GEN_MAX_UPLOAD_SIZE, 2 );
+
+		$result['error'] = 'Your image was '. $file_size .'! It must not exceed '. $max_size .'.';
+
+	} elseif (  $image_width > $maximum['width'] || $image_height > $maximum['height'] ) {
+		$result['error']	= "Image dimensions are too large. Maximum size is {$maximum['width']} by {$maximum['height']} pixels. Uploaded image is $image_width by $image_height pixels.";
+	}
+
+	return $result;
+
+}
+
+class Magazine_Cover_Generator_Setup {
+
+	static $instance = false;
+
+	/**
+	 * Singleton
+	 *
+	 * Returns a single instance of the current class.
+	 */
+	public static function singleton() {
+
+		if ( !self::$instance )
+			self::$instance = new self;
+
+		return self::$instance;
+	}
+
+	public function __construct() {
+
+		// check if CMB2 is loaded. if not BAIL
+		if ( defined( 'CMB2_LOADED' ) ) {
+
+			// set up Ads settings page
+			if ( file_exists( COVER_GEN_DIR .'/magazine-cover-generator-admin.php' ) ){
+
+				require_once( COVER_GEN_DIR .'/magazine-cover-generator-admin.php' );
+				add_action( 'init', array( 'Cover_Generator_Admin', 'singleton' ), 10 );
+
+			}
+
+			add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts_and_styless' ) );
+
+			add_shortcode( 'cover_generator', array( $this, 'cover_generator_shortcode' ) );
+
+		} else {
+
+			//display error if CMB2 is not IN USE
+			echo '<div class="error">
+						<p>This plugin is dependent of CMB2 plugin. Please <strong>activate CMB2</strong>.</p>
+					</div>';
+
+		}
+
+
+	}
+
+	public function register_scripts_and_styless() {
+
+		wp_register_style( 'magazine-cover-generator-css', COVER_GEN_URL .'/assets/cover-generator.min.css', array(), COVER_GEN_VERSION );
+		wp_register_script( 'magazine-cover-generator-js', COVER_GEN_URL .'/assets/image.editor.min.js', array( 'jquery' ), COVER_GEN_VERSION, true );
+
+	}
+
+	public function cover_generator_shortcode() {
+
+		// we need the styles everywhere the shortcode is being generated
+		wp_enqueue_style( 'magazine-cover-generator-css' );
+
+		// start getting content of shortcode ready
+		ob_start();
+
+		echo '<p><b>Step 1.</b> Upload your photo (portrait works better than landscape).</p>';
+
+		if ( isset( $_POST['submit'] ) && isset( $_POST['mcg_image_form_submitted'] ) && wp_verify_nonce( $_POST['mcg_image_form_submitted'], 'mcg_image_form') ) {
+
+			// check image
+			$result	= mcg_cover_parse_file_errors( $_FILES['mcg_cover_image'] );
+
+			if ( !empty( $result['error'] ) ) {
+
+				echo '<p class="cg-error">ERROR: ' . $result['error'] . '</p>';
+				echo '<p class="cg-error">Please try again.</p>';
+				echo $this->get_form();
+				wp_enqueue_script( 'magazine-cover-generator-js' );
+
+			} else {
+
+				// enqueue scripts now since we will definitely be showing them
+				wp_enqueue_style( 'wp-color-picker' );
+				wp_enqueue_script( 'iris', admin_url( 'js/iris.min.js' ), array( 'jquery-ui-draggable', 'jquery-ui-slider', 'jquery-touch-punch' ) );
+				wp_enqueue_script( 'wp-color-picker', admin_url( 'js/color-picker.min.js' ), array( 'iris' ) );
+				wp_enqueue_script( 'fabric-js', 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.12/fabric.min.js' );
+				wp_enqueue_script( 'cover-generator-js' );
+
+				$colorpicker_l10n = array(
+					'clear'			=> __( 'Clear' ),
+					'defaultString'	=> __( 'Default' ),
+					'pick'			=> __( 'Select Color' ),
+					'current'		=> __( 'Current Color' ),
+				);
+				wp_localize_script( 'wp-color-picker', 'wpColorPickerL10n', $colorpicker_l10n );
+
+				$user_image_source	= $this->handle_user_image( $_FILES['mcg_cover_image'] );
+
+				if ( !empty( $user_image_source ) ) {
+
+					$covers_list	= cover_generator_get_option( 'covers_list' ) ? cover_generator_get_option( 'covers_list' ) : array();
+					$covers_ids		= array_keys( $covers_list );
+
+					$bg_colors	= cover_generator_get_option( 'bg_colors' ) ? cover_generator_get_option( 'bg_colors' ) : '';
+
+					$first_cover_data	= wp_get_attachment_image_src( $covers_ids[0], 'full' );
+					$first_cover_url	= $first_cover_data[0];
+					$first_cover_width	= $first_cover_data[1];
+					$first_cover_height	= $first_cover_data[2];
+					?>
+
+					<script>
+						// color picker palette
+						var colorPickerPalette = ["<?php echo implode( '","', $bg_colors ); ?>"];
+
+						// defaults for editor
+						var mask	= {
+							src: '<?php echo $first_cover_url; ?>',
+							left: 'center',
+							top: 'center',
+							width: <?php echo $first_cover_width; ?>,
+							height: <?php echo $first_cover_height; ?>,
+							opacity: 1,
+							selectable: false,
+						};
+						var userImage	= {
+							zIndex: 0,
+							name: 'user-uploaded',
+							controlTitle: 'Uploaded Image',
+							type: 'image',
+							src: 'data:image/jpeg;base64,<?php echo base64_encode( $user_image_source ); ?>',
+							lockScalingFlip: true,
+							lockUniScaling: true,
+							angle: 0,
+							opacity: 1,
+							scale: 1,
+							evented: true,
+							hasControls: true,
+							selectable: true,
+							rotationIncrement: 15,
+							movementIncrement: 15,
+							scaleIncrement: 0.05
+						}
+
+					</script>
+
+					<div class="main-editor-content">
+
+						<div id="img-edit">
+
+							<div id="canvas__container">
+
+								<canvas id="canvas"></canvas>
+
+							</div>
+
+							<!-- CONTROLS HERE -->
+							<form action="" class="canvas__controls">
+
+								<?php if ( !empty( $bg_colors ) ) { ?>
+
+									<fieldset class="canvas__controls-subgroup">
+										<label for="canvasbg"><strong>Step 2.</strong> Select Background Color</label>
+										<input type="text" name="canvasbg" class="color-field" value="" />
+									</fieldset>
+
+								<?php } ?>
+
+								<fieldset class="canvas__controls-subgroup">
+
+									<p><strong>(Optional)</strong> Invert Headlines Color</p>
+
+									<div class="inverttext">
+										<input type="checkbox" name="inverttext" id="inverttext" class="inverttext-checkbox">
+										<label for="inverttext" class="inverttext-label"></label>
+									</div>
+
+								</fieldset>
+
+								<fieldset class="canvas__controls-subgroup canvas__masks">
+
+									<h4><strong>Step 3.</strong> Select Cover Style</h4>
+
+									<div class="canvas__masks__wrapper">
+
+										<?php foreach ( $covers_ids as $key => $cover_id ) {
+
+											$cover_medium	= wp_get_attachment_image_src( $cover_id, 'medium' )[0];
+											$cover_full		= wp_get_attachment_image_src( $cover_id, 'full' )[0];
+											$checked		= $key == 0 ? ' checked' : '';
+											$input_name		= 'canvasmask'. $key;
+
+											echo '<input type="radio" name="canvasmask" id="'. $input_name .'" value="'. $cover_full .'"'. $checked .'>';
+											echo '<label for="'. $input_name .'"><img src="'. $cover_medium .'"></label>';
+
+										} ?>
+
+									</div>
+
+								</fieldset>
+
+							</form>
+
+						</div>
+
+						<div id="no-img-edit" style="display: none;">
+							<img src="data:image/jpeg;base64,<?php echo base64_encode( $user_image_source ); ?>" style="max-width: 393px; max-height: 325px;" />
+						</div>
+
+						<a id="btn-download" class="btn-submit" href="#">Download Your Cover!</a>
+
+					</div>
+
+					<noscript>
+						<style type="text/css">
+							.main-editor-content {
+								display: none;
+							}
+
+							#noscriptdiv {
+								display: block;
+								text-align: left;
+							}
+						</style>
+
+						<div id="noscriptdiv">
+
+							<div class="inner-width">
+								<h2>JavaScript must be enabled</h2>
+								<p>Please enable JavaScript in your browser to start your endorsement. Consult your browser’s Help section for information on how to change the JavaScript settings, then click Continue below.</p>
+							</div>
+						</div>
+					</noscript>
+
+					<?php
+
+				} else {
+					echo '<p>Sorry, did not recognize the file type you tried to upload. Please try again.</p>';
+				}
+
+			}
+
+		} else {
+
+			echo $this->get_form();
+			wp_enqueue_script( 'magazine-cover-generator-js' );
+
+		}
+
+		return ob_get_clean();
+
+	}
+
+	public function get_form() {
+
+		// get the form markup
+		ob_start(); ?>
+
+			<form name="mcg-cover" method="post" enctype="multipart/form-data" action="">
+				<?php wp_nonce_field( 'mcg_image_form', 'mcg_image_form_submitted' ); ?>
+				<input type="file" name="mcg_cover_image" id="mcg_cover_image"><br>
+				<input name="submit" type="submit" value="Upload Image">
+			</form>
+
+		<?php
+		return ob_get_clean();
+
+	}
+
+	public function handle_user_image( $file_upload = null ) {
+
+		if ( $file_upload === null ) {
+			return null;
+		}
+
+		$image_name	= $file_upload['name'];
+		$image_size	= $file_upload['size'];
+		$image_temp	= $file_upload['tmp_name'];
+		$image_type	= $file_upload['type'];
+
+		switch ( strtolower( $image_type ) ) { //determine uploaded image type
+			// Create new image from file
+			case 'image/png':
+				$image_resource	= imagecreatefrompng( $image_temp );
+				break;
+			case 'image/gif':
+				$image_resource	= imagecreatefromgif( $image_temp );
+				break;
+			case 'image/jpeg':
+			case 'image/pjpeg':
+				$image_resource	= imagecreatefromjpeg( $image_temp );
+				break;
+			default:
+				$image_resource	= false;
+		}
+
+		list( $img_width, $img_height )	= getimagesize( $image_temp );
+
+		$new_canvas	= imagecreatetruecolor( $img_width , $img_height );
+
+		if ( imagecopyresampled( $new_canvas, $image_resource , 0, 0, 0, 0, $img_width, $img_height, $img_width, $img_height) ) {
+
+			// capture image so we can display it
+			ob_start();
+			imagejpeg( $new_canvas, NULL , 100 );
+
+			// free up memory
+			imagedestroy( $new_canvas );
+			$user_image_source	= ob_get_clean();
+
+		}
+
+
+		return $user_image_source;
+
+	}
+
+
+
+}
+
+//load after all plugins are loaded, so we can check if CMB2 is loaded (was originally set up with CMB2)
+add_action( 'plugins_loaded', array( 'Cover_Generator_Setup', 'singleton' ) );

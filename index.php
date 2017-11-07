@@ -1,0 +1,2 @@
+<?php
+	// YOU SHALL NOT PASS

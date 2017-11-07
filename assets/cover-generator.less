@@ -1,0 +1,176 @@
+h4 {
+	margin-bottom: 15px;
+}
+strong {
+	font-style: bold;
+}
+.cg-error {
+	color: #f00;
+	font-weight: bold;
+}
+#canvas {
+	border: 1px solid #cecece;
+	height: auto;
+	max-width: 100%;
+}
+
+.canvas {
+
+	&__controls {
+
+		label {
+			display: block;
+			margin: 15px 0;
+		}
+
+		&-subgroup {
+			display: block;
+			margin: 20px 0;
+		}
+
+	}
+
+	&__masks {
+
+		&__wrapper {
+			display: flex;
+			justify-content: space-between;
+
+			label {
+				background: url('blurry-girl.jpg') no-repeat;
+				background-size: cover;
+				box-shadow: 0 0 15px #888;
+				border: 2px solid #fff;
+				cursor: pointer;
+				display: inline-block;
+				margin-right: 10px;
+			}
+
+			> input {
+				visibility: hidden;
+				position: absolute;
+				z-index: 9999;
+
+				&:checked + label {
+					border: 2px solid #e50077;
+				}
+			}
+
+			@media screen and (min-width: 1200px) {
+
+				img {
+					max-width: 150px;
+				}
+
+			}
+
+		}
+
+	}
+
+}
+
+.iris-picker {
+	height: 35px !important;
+	padding-bottom: 0 !important;
+	width: 200px !important;
+
+	.iris-palette {
+		max-height: 20px !important;
+		max-width: 20px !important;
+	}
+	.iris-square,
+	.iris-slider {
+		display: none !important;
+	}
+}
+.wp-picker-input-wrap {
+	display: none !important;
+}
+
+.btn-submit {
+	background: #E20177;
+	border: 4px solid #fff;
+	color: #fff;
+	display: inline-block;
+	font-family: 'Fjalla One',sans-serif;
+	font-size: 18px;
+	font-weight: 300;
+	line-height: 30px;
+	margin: 15px 0 10px;
+	max-width: 100%;
+	padding: 7px 12px;
+	text-align: center;
+	transition: all .25s ease;
+	width: 300px;
+
+	&:hover {
+		border: 4px solid #000;
+		text-decoration: none;
+	}
+
+	&:link,
+	&:hover,
+	&:visited {
+		color: #fff;
+	}
+
+}
+
+form[name='mcg-cover'] input[type='submit'] {
+	max-width: 100%;
+	width: 300px;
+}
+
+.inverttext {
+	position: relative;
+	width: 45px;
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select: none;
+
+	&-label {
+		background-color: #9E9E9E;
+		border: 2px solid #9E9E9E;
+		border-radius: 20px;
+		cursor: pointer;
+		display: block;
+		height: 20px;
+		line-height: 20px;
+		overflow: hidden;
+		padding: 0;
+		transition: background-color 0.3s ease-in;
+
+		&:before {
+			background: #fff;
+			border: 2px solid #9E9E9E;
+			border-radius: 20px;
+			bottom: 0;
+			content: '';
+			display: block;
+			margin: 0;
+			position: absolute;
+			right: 23px;
+			top: 0;
+			transition: all 0.2s ease-in 0s;
+			width: 20px;
+		}
+
+	}
+
+	&-checkbox {
+		display: none;
+
+		&:checked + .inverttext-label {
+			background-color: #E20177;
+		}
+		&:checked + .inverttext-label,
+		&:checked + .inverttext-label:before {
+		   border-color: #E20177;
+		}
+		&:checked + .inverttext-label:before {
+			right: 2px;
+		}
+	}
+
+}
