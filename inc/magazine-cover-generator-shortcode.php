@@ -352,6 +352,4 @@ class Magazine_Cover_Generator_Shortcode {
 
 	}
 
-
-
 }
