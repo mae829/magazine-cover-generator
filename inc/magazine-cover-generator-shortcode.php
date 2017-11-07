@@ -114,7 +114,7 @@ class Magazine_Cover_Generator_Shortcode {
 
 					</script>
 
-					<p>Note: Photo must be smaller than 3MB. Vertical Images work best.</p>
+					<p>Note: Photo must be smaller than <?php echo size_format( MCG_MAX_UPLOAD_SIZE, 0 ); ?>. Vertical Images work best.</p>
 
 					<div class="main-editor-content">
 
