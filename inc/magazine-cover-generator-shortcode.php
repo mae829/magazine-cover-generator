@@ -19,11 +19,17 @@ class Magazine_Cover_Generator_Shortcode {
 
 	public function __construct() {
 
-		add_shortcode( 'cover_generator', array( $this, 'cover_generator_shortcode' ) );
+		add_shortcode( 'cover_generator', array( $this, 'cover_generator_func' ) );
 
 	}
 
-	public function cover_generator_shortcode() {
+	public function cover_generator_func( $atts ) {
+
+		// override default attributes with user attributes
+		$atts = shortcode_atts( array(
+			'invertPointX' => 0,
+			'invertPointY' => 165,
+		), $atts, 'cover_generator' );
 
 		// we need the styles everywhere the shortcode is being generated
 		wp_enqueue_style( 'magazine-cover-generator-css' );
@@ -110,6 +116,10 @@ class Magazine_Cover_Generator_Shortcode {
 							rotationIncrement: 15,
 							movementIncrement: 15,
 							scaleIncrement: 0.05
+						}
+						var invertPoint	= {
+							x: <?php echo $atts['invertPointX']; ?>,
+							y: <?php echo $atts['invertPointY']; ?>
 						}
 
 					</script>

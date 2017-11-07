@@ -256,11 +256,11 @@ jQuery(function($) {
              * We only want to do a certain part of the images
              * ( work around since the InvertBW filter wasn't accurate enough )
              */
-            // Declare from what point on the Y axis we want to change
+            // Declare from what point on the Y axis we want to change (both points determined in shortcode through filter or params)
             // Y axis limit
-            for ( var y = 165; y <= canvasEl.height; y++ ) {
+            for ( var y = invertPoint.y; y <= canvasEl.height; y++ ) {
                 // X axis limit
-                for ( var x = 0; x <= canvasEl.width; x++ ) {
+                for ( var x = invertPoint.x; x <= canvasEl.width; x++ ) {
                    // get pixel origin
                     var offset  = ( ( canvasEl.width * y ) + x ) * 4;
 
