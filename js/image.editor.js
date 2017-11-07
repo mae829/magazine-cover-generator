@@ -290,4 +290,3 @@ if ( $('#canvas').length ) {
     })(typeof exports !== 'undefined' ? exports : this);
 
 }
-
